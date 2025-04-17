@@ -31,7 +31,7 @@ def create_wrestler(wrestler: WrestlerCreate, db: Session = Depends(get_db)):
     db.add(stats)
     db.commit()
 
-    return WrestlerRead.model_validate(new_wrestler)
+    return new_wrestler
 
     
 @router.get("/", response_model=List[WrestlerRead])

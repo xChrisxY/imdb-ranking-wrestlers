@@ -18,7 +18,7 @@ class Wrestler(SQLModel, table=True):
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = Field(default=None, nullable=True)
 
-    stats = List["WrestlerStats"] = Relationship(back_populates="wrestler")
+    stats: List["WrestlerStats"] = Relationship(back_populates="wrestler")
 
 class WrestlerStats(SQLModel, table=True):
     

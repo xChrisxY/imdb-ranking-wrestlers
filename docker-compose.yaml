@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  auth-db:
+    image: postgres:13
+    volumes:
+      - auth-db-data:/var/lib/postgresql/data 
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTRGES_USER=postgres
+      - POSTGRES_DB=auth_db 
+    ports:
+      - "5432:5432"
+    networks:
+      - ranking-wrestlers-network
+
+  
+  auth-service:
+    build: 
+      context: ./services/auth 
+    depends_on:
+      - auth-db
+    environment:
+      - DATABASE_URI=postgresql://postgres:postgres@auth-db/auth_db
+      - SECRET_KEY=my-secret-key
+    ports:
+      - "8000:8000"
+    networks:
+      - ranking-wrestlers-network
+    volumes:
+      - ./services/auth:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    
+volumes:
+  auth-db-data:
+
+networks:
+  ranking-wrestlers-network:
+    driver: bridge

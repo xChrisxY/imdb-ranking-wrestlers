@@ -1,0 +1,24 @@
+# Ignora el archivo de entorno sensible
+.env
+
+# Archivos innecesarios en el contenedor
+*.pyc
+*.pyo
+__pycache__/
+*.log
+
+# Herramientas de desarrollo
+.vscode/
+.idea/
+*.swp
+
+# Control de versiones
+.git/
+.gitignore
+
+# Archivos temporales o generados
+.DS_Store
+*.bak
+*.tmp
+node_modules/
+

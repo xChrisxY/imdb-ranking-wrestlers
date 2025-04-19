@@ -1,6 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, List
 from datetime import date, datetime, timezone
+from sqlalchemy import Column, ForeignKey
 
 class Wrestler(SQLModel, table=True):
     
@@ -18,12 +19,12 @@ class Wrestler(SQLModel, table=True):
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = Field(default=None, nullable=True)
 
-    stats: List["WrestlerStats"] = Relationship(back_populates="wrestler")
+    stats: List["WrestlerStats"] = Relationship(back_populates="wrestler", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 class WrestlerStats(SQLModel, table=True):
     
     id: Optional[int] = Field(default=None, primary_key=True)
-    wrestler_id: int = Field(foreign_key="wrestler.id", nullable=False)
+    wrestler_id: int = Field(sa_column=Column(ForeignKey("wrestler.id", ondelete="CASCADE"), nullable=False))
     wins: int = Field(default=0)
     losses: int = Field(default=0)
     draws: int = Field(default=0)
@@ -33,4 +34,4 @@ class WrestlerStats(SQLModel, table=True):
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = Field(default=None, nullable=True)
 
-    wrestler: Wrestler = Relationship(back_populates="stats")
+    wrestler: Wrestler = Relationship(back_populates="stats", sa_relationship_kwargs={"cascade": "all, delete"})

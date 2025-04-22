@@ -5,7 +5,7 @@ from datetime import datetime
 
 from app.db.models import Venue, Event, EventType
 from app.db.session import get_db
-from app.schemas.event import EventCreate, EventRead, EventDetai, EventUpdate, VenueCreate, VenueRead
+from app.schemas.event import EventCreate, EventRead, EventDetail, EventUpdate, VenueCreate, VenueRead
 
 router = APIRouter()
 

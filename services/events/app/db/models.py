@@ -38,7 +38,7 @@ class Venue(SQLModel, table=True):
     updated_at: Optional[datetime] = Field(default=None, nullable=True)
 
     events: List["Event"] = Relationship(back_populates="venue")
-    events: List["Show"] = Relationship(back_populates="venue")
+    shows: List["Show"] = Relationship(back_populates="venue")
 
 class Event(SQLModel, table=True):
     
@@ -47,7 +47,7 @@ class Event(SQLModel, table=True):
     name: str = Field(nullable=False, index=True)
     event_type: EventType = Field(nullable=False)
     date: datetime = Field(nullable=False) 
-    venue_id: Optional[int] = Field(default=None, foreign_key="venue.id")
+    venue_id: Optional[int] = Field(default=None, foreign_key="venues.id")
     description: Optional[str] = Field(default=None)
     attendance: Optional[str] = Field(default=None)
     image_url: Optional[str] = Field(default=None)
@@ -70,6 +70,5 @@ class Show(SQLModel, table=True):
     attendance: Optional[int] = Field(default=None)
     created_at: Optional[datetime] = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: Optional[datetime] = Field(default=None, nullable=True)
-
 
     venue: Optional["Venue"] = Relationship(back_populates="shows")

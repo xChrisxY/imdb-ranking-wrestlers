@@ -28,7 +28,7 @@ class EventBase(BaseModel):
     date: datetime 
     venue_id: Optional[int] = None
     description: Optional[str] = None
-    attendance: Optional[str] = None
+    attendance: Optional[int] = None
     image_url: Optional[str] = None
 
 class EventCreate(EventBase):

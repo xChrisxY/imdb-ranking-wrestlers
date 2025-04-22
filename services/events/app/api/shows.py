@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, query
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select, desc
 from typing import List, Optional
 from datetime import datetime 

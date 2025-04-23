@@ -12,7 +12,7 @@ class ShowBase(BaseModel):
     description: Optional[str] = None
     attendance: Optional[int] = None
 
-class ShowCreate(BaseModel):
+class ShowCreate(ShowBase):
     pass
 
 class ShowUpdate(BaseModel):

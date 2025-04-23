@@ -62,6 +62,35 @@ services:
     command: sh -c "while ! nc -z wrestlers-db 5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
 
 
+  events-db:
+    image: postgres:13
+    volumes:
+      - events-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=events
+    ports:
+      - "5434:5432"
+    networks:
+      - ranking-wrestlers-network
+
+  events-service:
+    build: 
+      context: ./services/events 
+    depends_on:
+      - events-db 
+      - auth-service
+    environment:
+      - DATABASE_URI=postgresql://postgres:postgres@events-db/events 
+      - AUTH_SERVICE_URL=http://auth-service:8000
+    ports:
+      - "8003:8003"
+    networks:
+      - ranking-wrestlers-network
+    volumes:
+      - ./services/events:/app
+    command: sh -c "while ! nc -z events-db 5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0 --port 8003 --reload"
     
 networks:
   ranking-wrestlers-network:
@@ -70,4 +99,5 @@ networks:
 volumes:
   auth-db-data:
   wrestlers-db-data:
+  events-db-data:
 

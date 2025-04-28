@@ -91,5 +91,29 @@ def get_events(
 
     return [EventRead.model_validate(event) for event in events]
     
-        
-        
+@router.get("/{event_id}", response_model=EventDetail)
+def get_event(event_id: int, db: Session = Depends(get_db)):
+    
+    statement = select(Event).where(Event.id == event_id)
+    event = db.exec(statement).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Event not found"
+        )
+    
+    # Obtener información detallada, incluido el venue
+    venue = None
+    if event.venue_id:
+        statement = select(Venue).where(Venue.id == event.venue_id)
+        venue = db.exec(statement).first()
+
+    # Creamos el objeto de respuesta 
+    event_detail = {
+        **event.__dict__,
+        "venue": venue.__dict__ if venue else None 
+    }
+    
+    return event_detail
+    

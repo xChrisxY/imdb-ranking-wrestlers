@@ -45,4 +45,55 @@ async def rate_match(rating_data: RatingCreate, db: Session = Depends(get_db), a
         )
 
     # Verificamos que la lucha existe
-    match = select(Match).where(Match.id == rating_data.match_id).first()
+    statement = select(Match).where(Match.id == rating_data.match_id)
+    match = db.exec(statement).first()
+
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Match not found"
+        )
+
+    # Verificamos si el usuario ya ha calificado esta lucha.
+    statement = select(Rating).where(Rating.match_id == rating_data.match_id, Rating.user_id == user_id)
+    existing_rating = db.exec(statement).first()
+
+    if existing_rating:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="You have already rated this match"
+        )
+
+    # Creamos el rating 
+    db_rating = Rating(
+        match_id=rating_data.match_id,
+        user_id=user_id,
+        rating=rating_data.rating,
+        comment=rating_data.comment
+    )
+
+    db.add(db_rating)
+    db.commit()
+    db.refresh(db_rating)
+
+    return db_rating
+
+    
+@router.get("/match/{match_id}", response_model=List[RatingRead])
+def get_match_ratings(match_id: int, db: Session = Depends(get_db)):
+    
+    # Verificamos que la lucha exista
+    statement = select(Match).where(Match.id == match_id)
+    match = db.exec(statement).first()
+
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Match not found"
+        )
+
+    statement = select(Rating).where(Rating.match_id == match_id).all()
+    ratings = db.exec(statement)
+
+    return ratings 
+    

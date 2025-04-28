@@ -16,6 +16,7 @@ async def get_wrestler_info(wrestler_id: int):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{settings.WRESTLERS_SERVICE_URL}/wrestlers/{wrestler_id}")
+            print(response)
             if response.status_code == 200:
                 return response.json()
             return None
@@ -52,12 +53,12 @@ async def create_match(match_data: MatchCreate, db: Session = Depends(get_db)):
         if not wrestler_info:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Event not found"
+                detail=f"Wrestler with ID {wrestler_entry.wrestler_id} not found"
             )
 
     # Creamos la lucha 
     db_match = Match(
-        event_id=match_data.event_i,
+        event_id=match_data.event_id,
         match_type=match_data.match_type,
         title_match=match_data.title_match,
         duration=match_data.duration,
@@ -72,14 +73,14 @@ async def create_match(match_data: MatchCreate, db: Session = Depends(get_db)):
 
     # Agregar los luchadores a la lucha
     for wrestler_entry in match_data.wrestlers:
-        stmt = MatchWrestler.insert().values(
+        match_wrestler = MatchWrestler(
             match_id=db_match.id,
             wrestler_id=wrestler_entry.wrestler_id,
             is_winner=wrestler_entry.is_winner,
             team=wrestler_entry.team
         )
 
-        db.exec(stmt)
+        db.add(match_wrestler)
 
     db.commit()
     return db_match

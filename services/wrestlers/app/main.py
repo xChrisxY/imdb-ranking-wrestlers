@@ -31,6 +31,11 @@ async def verify_token(request, call_next):
     if request.url.path == "/health":
         response = await call_next(request)
         return response 
+
+    # Verificamos si la ruta es pública y el método es GET
+    if request.method == "GET":
+        response = await call_next(request)
+        return response
     
     auth_header = request.headers.get("Authorization")
     if not auth_header:

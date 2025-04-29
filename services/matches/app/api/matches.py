@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Body
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from typing import List, Optional, Dict 
 import httpx 
 from datetime import datetime, timezone, timedelta 
@@ -120,4 +120,51 @@ async def get_matches(
 
     return matches
 
+@router.get("/{match_id}", response_model=MatchDetail)
+async def get_match(match_id: int, db: Session = Depends(get_db)):
+    print("siii")
+    statement = select(Match).where(Match.id == match_id)
+    match = db.exec(statement).first()
+
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Match not found"
+        )
+
+    # Obtener los luchadores de la lucha 
+    wrestler_statement = select(MatchWrestler).where(MatchWrestler.match_id == match_id)
+    wrestler_query = db.exec(wrestler_statement).all()
+
+    wrestlers_data = []
+    print(f"Los luchadores son: {wrestler_query}")
+    for wrestler_entry in wrestler_query:
+        wrestler_info = await get_wrestler_info(wrestler_entry.wrestler_id)
+        if wrestler_info:
+            wrestlers_data.append({
+                "wrestler": wrestler_info,
+                "is_winner": wrestler_entry.is_winner,
+                "team": wrestler_entry.team
+            })
+
+    # Obtener información del evento
+    event_info = await get_event_info(match.event_id)
+
+    # Calcular el promedio de ratings 
+    avg_rating_statement = select(func.avg(Rating.rating)).where(Rating.match_id == match_id)
+    avg_rating = db.exec(avg_rating_statement).one_or_none() 
+    avg_rating = avg_rating if avg_rating is not None else 0
     
+    rating_count_statement = select(func.count(Rating.id)).where(Rating.match_id == match_id)
+    rating_count = db.exec(rating_count_statement).one_or_none() 
+    rating_count = rating_count if rating_count is not None else 0
+
+    match_detail = {
+        **match.model_dump(),
+        "wrestlers": wrestlers_data,
+        "event": event_info,
+        "average_rating": round(float(avg_rating), 2),
+        "rating_count": rating_count
+    }
+
+    return match_detail

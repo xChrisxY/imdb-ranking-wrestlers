@@ -61,6 +61,40 @@ services:
       - ./services/wrestlers:/app
     command: sh -c "while ! nc -z wrestlers-db 5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload"
 
+  matches-db:
+    image: postgres:13 
+    volumes:
+      - matches-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=matches 
+    ports:
+      - "5434:5432"
+    networks:
+      - ranking-wrestlers-network
+
+  matches-service:
+    build:
+      context: ./services/matches
+    depends_on:
+      - matches-db 
+      - auth-service
+      - wrestlers-service 
+      - events-service 
+    environment:
+      - DATABASE_URI=postgresql://postgres:postgres@events-db/events 
+      - AUTH_SERVICE_URL=http://auth-service:8000
+      - WRESTLER_SERVICE_URL=http://wrestlers-service:8001
+      - EVENTS_SERVICE_URL=http://events-service:8003
+    ports:
+      - "8002:8002"
+    networks:
+      - ranking-wrestlers-network
+    volumes:
+      - ./services/matches:/app
+    command: sh -c "while ! nc -z matches-db 5432; do sleep 1; done; uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload"
+
 
   events-db:
     image: postgres:13
@@ -71,7 +105,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_DB=events
     ports:
-      - "5434:5432"
+      - "5435:5432"
     networks:
       - ranking-wrestlers-network
 
@@ -99,5 +133,6 @@ networks:
 volumes:
   auth-db-data:
   wrestlers-db-data:
+  matches-db-data:
   events-db-data:
 

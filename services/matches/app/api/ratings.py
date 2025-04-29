@@ -13,11 +13,11 @@ router = APIRouter()
 async def get_current_user(token: str) -> int:
     """ Obtener el ID del usuario actual desde el token de autenticación"""
     try:
-       async with httpx.AsyncClient() as client:
-            response = await client.get(f"{settings.AUTH_SERVICE_URL}/users/me", headers={"Authorization": f"Bearer {token}"})
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{settings.AUTH_SERVICE_URL}/users/me", headers={"Authorization": f"Bearer {token.strip()}"})
 
             if response.status_code == 200:
-               user = response.json
+               user = response.json()
                return user["id"]
 
             return None
@@ -92,8 +92,96 @@ def get_match_ratings(match_id: int, db: Session = Depends(get_db)):
             detail="Match not found"
         )
 
-    statement = select(Rating).where(Rating.match_id == match_id).all()
-    ratings = db.exec(statement)
+    statement = select(Rating).where(Rating.match_id == match_id)
+    ratings = db.exec(statement).all()
 
     return ratings 
     
+
+@router.put("/{rating_id}", response_model=RatingRead, status_code=status.HTTP_200_OK)
+async def update_rating(
+    rating_id: int, 
+    rating_update: RatingUpdate,
+    db: Session = Depends(get_db),
+    authorization: Optional[str] = Header(None)
+):
+    
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+
+    token = authorization.replace("Bearer", "")
+    user_id = await get_current_user(token)
+
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    rating_query = select(Rating).where(Rating.id == rating_id)
+    rating_db = db.exec(rating_query).first()
+
+    if not rating_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rating not found"
+        )
+
+    # Verificar que el rating pertenece al usuario actual
+    if rating_db.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own ratings"
+        )
+
+    # Actualizar el rating 
+    for key, value in rating_update.model_dump(exclude_unset=True).items():
+        setattr(rating_db, key, value)
+
+    db.add(rating_db)
+    db.commit()
+    db.refresh(rating_db)
+    return rating_db
+
+    
+@router.delete("/{rating_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_rating(rating_id: int, db: Session = Depends(get_db), authorization: Optional[str] = Header(None)):
+    
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated"
+        )
+
+    token = authorization.replace("Bearer", "")
+    user_id = await get_current_user(token)
+
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
+    rating_query = select(Rating).where(Rating.id == rating_id)
+    rating_db = db.exec(rating_query).first()
+
+    if not rating_db:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rating not found"
+        )
+
+    # Verificar que el rating pertenece al usuario actual
+    if rating_db.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own ratings"
+        )
+
+    # Eliminamos el rating
+    db.delete(rating_db)
+    db.commit()
+    return None

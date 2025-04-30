@@ -1,0 +1,29 @@
+_format_version: "3.0"
+
+services:
+  - name: auth-service
+    url: http://auth-service:8000
+    routes:
+      - paths:
+        - /api/v1/auth 
+
+  - name: wrestlers-service
+    url: http://wrestlers-service:8001
+    routes:
+      - paths:
+        - /api/v1/wrestlers 
+
+  - name: matches-service
+    url: http://matches-service:8002
+    routes:
+      - paths:
+        - /api/v1/matches
+    
+  - name: events-service
+    url: http://events-service:8003
+    routes:
+      - paths:
+        - /api/v1/events
+
+
+  

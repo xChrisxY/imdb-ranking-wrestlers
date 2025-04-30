@@ -1,6 +1,21 @@
 version: '3.8'
 
 services:
+
+  kong:
+    image: kong:latest 
+    container_name: kong
+    environment:
+      - KONG_DATABASE=off
+      - KONG_DECLARATIVE_CONFIG=/usr/local/kong/declarative/kong.yml
+    volumes:
+      - ./kong-config/kong.yml:/usr/local/kong/declarative/kong.yml
+    ports:
+      - "8008:8000" 
+    networks:
+      - ranking-wrestlers-network
+
+
   auth-db:
     image: postgres:13
     volumes:
